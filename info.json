@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "06b76c58f1a9f933919464c5b06fd956de051fb2",
+    "author": "Mark Edmondson <github@markedmondson.me>",
+    "time": "2020-04-20 13:36:52",
+    "files": 1,
+    "merge": false,
+    "message": "update tests\n"
+  },
+  "remote": "https://github.com/ropensci/googleLanguageR",
+  "pkg": "googleLanguageR"
+}
