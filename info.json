@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "5152257d7aac6270cfa7ac34f21becaefa4b1270",
+    "author": "Mark <github@markedmondson.me>",
+    "time": "2023-10-05 11:17:27",
+    "files": 8,
+    "merge": true,
+    "message": "Merge pull request #85 from dietrichson/master\n\n"
+  },
+  "repo": "https://github.com/ropensci/googleLanguageR",
+  "pkg": "googleLanguageR"
+}
