@@ -1,0 +1,155 @@
+# Google Cloud Speech-to-Text API
+
+The Google Cloud Speech-to-Text API enables you to convert audio to text
+by applying neural network models in an easy to use API. The API
+recognizes over 80 languages and variants, to support your global user
+base. You can transcribe the text of users dictating to an application’s
+microphone or enable command-and-control through voice among many other
+use cases.
+
+Read more [on the Google Cloud Speech-to-Text
+Website](https://cloud.google.com/speech-to-text)
+
+The Cloud Speech API provides audio transcription. Its accessible via
+the `gl_speech` function.
+
+Arguments include:
+
+- `audio_source` - this is a local file in the correct format, or a
+  Google Cloud Storage URI. This can also be a `Wave` class object from
+  the package `tuneR`
+- `encoding` - the format of the sound file - `LINEAR16` is the common
+  `.wav` format, other formats include `FLAC` and `OGG_OPUS`
+- `sampleRate` - this needs to be set to what your file is recorded
+  at.  
+- `languageCode` - specify the language spoken as a [`BCP-47` language
+  tag](https://datatracker.ietf.org/doc/html/bcp47)
+- `speechContexts` - you can supply keywords to help the translation
+  with some context.
+
+### Returned structure
+
+The API returns a list of two data.frame tibbles - `transcript` and
+`timings`.
+
+Access them via the returned object and `$transcript` and `$timings`
+
+``` r
+
+return <- gl_speech(test_audio, languageCode = "en-GB")
+
+return$transcript
+# A tibble: 1 x 2
+#                                                                                                         transcript confidence
+#                                                                                                              <chr>      <chr>
+#1 to administer medicine to animals is frequently a very difficult matter and yet sometimes it's necessary to do so  0.9711006
+
+return$timings
+#   startTime endTime       word
+#1         0s  0.100s         to
+#2     0.100s  0.700s administer
+#3     0.700s  0.700s   medicine
+#4     0.700s  1.200s         to
+# etc...
+```
+
+### Demo for Google Cloud Speech-to-Text API
+
+A test audio file is installed with the package which reads:
+
+> “To administer medicine to animals is frequently a very difficult
+> matter, and yet sometimes it’s necessary to do so”
+
+The file is sourced from the University of Southampton’s speech
+detection (`http://www-mobile.ecs.soton.ac.uk/`) group and is fairly
+difficult for computers to parse, as we see below:
+
+``` r
+
+library(googleLanguageR)
+## get the sample source file
+test_audio <- system.file("woman1_wb.wav", package = "googleLanguageR")
+
+## its not perfect but...:)
+gl_speech(test_audio)$transcript
+
+## get alternative transcriptions
+gl_speech(test_audio, maxAlternatives = 2L)$transcript
+
+gl_speech(test_audio, languageCode = "en-GB")$transcript
+
+## help it out with context for "frequently"
+gl_speech(test_audio, 
+            languageCode = "en-GB", 
+            speechContexts = list(phrases = list("is frequently a very difficult")))$transcript
+```
+
+### Word transcripts
+
+The API [supports
+timestamps](https://cloud.google.com/speech/reference/rest/v1/speech/recognize#WordInfo)
+on when words are recognised. These are outputted into a second
+data.frame that holds three entries: `startTime`, `endTime` and the
+`word`.
+
+``` r
+
+str(result$timings)
+#'data.frame':  152 obs. of  3 variables:
+# $ startTime: chr  "0s" "0.100s" "0.500s" "0.700s" ...
+# $ endTime  : chr  "0.100s" "0.500s" "0.700s" "0.900s" ...
+# $ word     : chr  "a" "Dream" "Within" "A" ...
+
+result$timings
+#     startTime endTime       word
+#1          0s  0.100s          a
+#2      0.100s  0.500s      Dream
+#3      0.500s  0.700s     Within
+#4      0.700s  0.900s          A
+#5      0.900s      1s      Dream
+```
+
+## Custom configurations
+
+You can also send in other arguments which can help shape the output,
+such as speaker diagrization (labelling different speakers) - to use
+such custom configurations create a
+[`RecognitionConfig`](https://cloud.google.com/speech-to-text/docs/reference/rest/v1p1beta1/RecognitionConfig)
+object. This can be done via R lists which are converted to JSON via
+[`library(jsonlite)`](https://jeroen.r-universe.dev/jsonlite) and an
+example is shown below:
+
+``` r
+
+## Use a custom configuration
+my_config <- list(encoding = "LINEAR16",
+                  diarizationConfig = list(
+                    enableSpeakerDiarization = TRUE,
+                    minSpeakerCount = 2,
+                    maxSpeakCount = 3
+                  ))
+
+# languageCode is required, so will be added if not in your custom config
+gl_speech(my_audio, languageCode = "en-US", customConfig = my_config)
+```
+
+## Asynchronous calls
+
+For speech files greater than 60 seconds of if you don’t want your
+results straight away, set `asynch = TRUE` in the call to the API.
+
+This will return an object of class `"gl_speech_op"` which should be
+used within the
+[`gl_speech_op()`](https://docs.ropensci.org/googleLanguageR/reference/gl_speech_op.md)
+function to check the status of the task. If the task is finished, then
+it will return an object the same form as the non-asynchronous case.
+
+``` r
+
+async <- gl_speech(test_audio, asynch = TRUE)
+async
+## Send to gl_speech_op() for status
+## 4625920921526393240
+
+result <- gl_speech_op(async)
+```

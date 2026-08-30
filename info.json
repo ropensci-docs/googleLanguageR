@@ -1,0 +1,13 @@
+{
+  "commit": {
+    "commit": "d423452e59b99894e5ba940a6c909154a618edd0",
+    "author": "CHERYL ISABELLA <CHERYL.ISABELLA@GMAIL.COM>",
+    "time": "2026-02-03T11:38:34Z",
+    "files": 2,
+    "merge": false,
+    "message": "Remove build; add to .gitignore\n"
+  },
+  "repo": "https://github.com/ropensci/googleLanguageR",
+  "pkg": "googleLanguageR",
+  "time": "2026-08-30T07:28:55Z"
+}
