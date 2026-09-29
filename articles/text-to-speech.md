@@ -1,0 +1,200 @@
+# Google Cloud Text-to-Speech API
+
+Google Cloud Text-to-Speech enables developers to synthesize
+natural-sounding speech with 30 voices, available in multiple languages
+and variants. It applies DeepMind’s groundbreaking research in WaveNet
+and Google’s powerful neural networks to deliver the highest fidelity
+possible. With this easy-to-use API, you can create lifelike
+interactions with your users, across many applications and devices.
+
+Read more [on the Google Cloud Text-to-Speech
+Website](https://cloud.google.com/text-to-speech)
+
+The Cloud Text-to-Speech API turns text into sound files of the spoken
+words. Its accessible via the `gl_talk` function.
+
+Arguments include:
+
+- `input` - The text to turn into speech
+- `output` Where to save the speech audio file
+- `languageCode` The language of the voice as a [`BCP-47` language
+  tag](https://datatracker.ietf.org/doc/html/bcp47)
+- `name` Name of the voice, see list via
+  [`gl_talk_languages()`](https://docs.ropensci.org/googleLanguageR/reference/gl_talk_languages.md)
+  or [online](https://cloud.google.com/text-to-speech/docs/voices) for
+  supported voices. If not set, then the service will choose a voice
+  based on `languageCode` and `gender`.
+- `gender` The gender of the voice, if available
+- `audioEncoding` Format of the requested audio stream - can be a choice
+  of `.wav`, `.mp3` or `.ogg`
+- `speakingRate` Speaking rate/speed
+- `pitch` Speaking pitch
+- `volumeGainDb` Volumne gain in dB
+- `sampleRateHertz` Sample rate for returned audio
+
+## Returned structure
+
+The API returns an audio file which is saved to the location specified
+in `output` - by default this is `output.wav` - if you don’t rename this
+file it will be overwritten by the next API call.
+
+It is advised to set the appropriate file extension if you change the
+audio encoding (e.g. to one of `.wav`, `.mp3` or `.ogg`) so audio payers
+recognise the file format.
+
+## Talk Languages
+
+The API can talk several different languages, with more being added over
+time. You can get a current list via the function
+[`gl_talk_languages()`](https://docs.ropensci.org/googleLanguageR/reference/gl_talk_languages.md)
+or [online](https://cloud.google.com/text-to-speech/docs/voices)
+
+``` r
+gl_talk_languages()
+# A tibble: 32 x 4
+   languageCodes name             ssmlGender naturalSampleRateHertz
+   <chr>         <chr>            <chr>                       <int>
+ 1 es-ES         es-ES-Standard-A FEMALE                      24000
+ 2 ja-JP         ja-JP-Standard-A FEMALE                      22050
+ 3 pt-BR         pt-BR-Standard-A FEMALE                      24000
+ 4 tr-TR         tr-TR-Standard-A FEMALE                      22050
+ 5 sv-SE         sv-SE-Standard-A FEMALE                      22050
+ 6 nl-NL         nl-NL-Standard-A FEMALE                      24000
+ 7 en-US         en-US-Wavenet-A  MALE                        24000
+ 8 en-US         en-US-Wavenet-B  MALE                        24000
+ 9 en-US         en-US-Wavenet-C  FEMALE                      24000
+10 en-US         en-US-Wavenet-D  MALE                        24000
+```
+
+If you are looking a specific language, specify that in the function
+call e.g. to see only Spanish (`es`) voices issue:
+
+``` r
+gl_talk_languages(languageCode = "es")
+# A tibble: 1 x 4
+  languageCodes name             ssmlGender naturalSampleRateHertz
+  <chr>         <chr>            <chr>                       <int>
+1 es-ES         es-ES-Standard-A FEMALE                      24000
+```
+
+You can then specify that voice when calling the API via the `name`
+argument, which overrides the `gender` and `languageCode` argument:
+
+``` r
+
+gl_talk("Hasta la vista", name = "es-ES-Standard-A")
+```
+
+Otherwise, specify your own `gender` and `languageCode` and the voice
+will be picked for you:
+
+``` r
+
+gl_talk("Would you like a cup of tea?", gender = "FEMALE", languageCode = "en-GB")
+```
+
+Some languages are not yet supported, such as Danish. The API will
+return an error in those cases.
+
+## Support for SSML
+
+Support is also included for Speech Synthesis Markup Language (SSML) -
+more details on using this to insert pauses, sounds and breaks in your
+audio can be found here:
+`https://cloud.google.com/text-to-speech/docs/ssml`
+
+To use, send in your SSML markup around the text you want to talk and
+set `inputType= "ssml"`:
+
+``` r
+
+# using SSML
+gl_talk('<speak>The <say-as interpret-as=\"characters\">SSML</say-as>
+  standard <break time=\"1s\"/>is defined by the
+  <sub alias=\"World Wide Web Consortium\">W3C</sub>.</speak>',
+  inputType =  "ssml")
+```
+
+## Effect Profiles
+
+You can output audio files that are optimised for playing on various
+devices.
+
+To use audio profiles, supply a character vector of the available audio
+profiles listed here:
+`https://cloud.google.com/text-to-speech/docs/audio-profiles` - the
+audio profiles are applied in the order given.
+
+For instance `effectsProfileIds="wearable-class-device"` will optimise
+output for smart watches,
+`effectsProfileIds=c("wearable-class-device","telephony-class-application")`
+will apply sound filters optimised for smart watches, then telephonic
+devices.
+
+``` r
+
+# using effects profiles
+gl_talk("This sounds great on headphones",
+        effectsProfileIds = "headphone-class-device")
+```
+
+## Browser Speech player
+
+Creating and clicking on the audio file to play it can be a bit of a
+drag, so you also have a function that will play the audio file for you,
+launching via the browser. This can be piped via the tidyverse’s `%>%`
+
+``` r
+
+library(magrittr)
+gl_talk("This is my audio player") %>% gl_talk_player()
+
+## non-piped equivalent
+gl_talk_player(gl_talk("This is my audio player"))
+```
+
+The
+[`gl_talk_player()`](https://docs.ropensci.org/googleLanguageR/reference/gl_talk_player.md)
+creates a HTML file called `player.html` in your working directory by
+default.
+
+### Using with Shiny
+
+You can do this in Shiny too, which is demonstrated in the [example
+Shiny
+app](https://github.com/ropensci/googleLanguageR/tree/master/inst/shiny/capture_speech)
+included with the package.
+
+Click the link for a video tutorial on how to [integrate text-to-speech
+into a Shiny app](https://www.youtube.com/watch?v=Ny0e7vHFu6o&t=8s) -
+the demo uses text-to-speech to [talk through a user’s Google Analytics
+statistics](https://github.com/MarkEdmondson1234/verbal_ga_shiny).
+
+# An error occurred.
+
+Unable to execute JavaScript.
+
+A shiny module has been created to help integrate text-to-speech into
+your Shiny apps, demo in the video above and below:
+
+``` r
+
+library(shiny)
+library(googleLanguageR)  # assume auto auth setup
+
+ui <- fluidPage(
+  gl_talk_shinyUI("talk")
+)
+
+server <- function(input, output, session){
+
+     transcript <- reactive({
+        paste("This is a demo talking Shiny app!")
+     })
+
+     callModule(gl_talk_shiny, "talk", transcript = transcript)
+}
+
+
+shinyApp(ui = ui, server = server)
+```

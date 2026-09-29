@@ -1,0 +1,181 @@
+# Google Natural Language API
+
+The Google Natural Language API reveals the structure and meaning of
+text by offering powerful machine learning models in an easy to use REST
+API. You can use it to extract information about people, places, events
+and much more, mentioned in text documents, news articles or blog posts.
+You can also use it to understand sentiment about your product on social
+media or parse intent from customer conversations happening in a call
+center or a messaging app.
+
+Read more [on the Google Natural Language
+API](https://cloud.google.com/natural-language)
+
+The Natural Language API returns natural language understanding
+technologies. You can call them individually, or the default is to
+return them all. The available returns are:
+
+- *Entity analysis* - Finds named entities (currently proper names and
+  common nouns) in the text along with entity types, salience, mentions
+  for each entity, and other properties. If possible, will also return
+  metadata about that entity such as a Wikipedia URL.
+- *Syntax* - Analyzes the syntax of the text and provides sentence
+  boundaries and tokenization along with part of speech tags, dependency
+  trees, and other properties.
+- *Sentiment* - The overall sentiment of the text, represented by a
+  magnitude `[0, +inf]` and score between `-1.0` (negative sentiment)
+  and `1.0` (positive sentiment).
+- *Content Classification* - Analyzes a document and returns a list of
+  content categories that apply to the text found in the document. A
+  complete list of content categories can be found
+  [here](https://cloud.google.com/natural-language/docs/categories).
+
+### Demo for Entity Analysis
+
+You can pass a vector of text which will call the API for each element.
+The return is a list of responses, each response being a list of tibbles
+holding the different types of analysis.
+
+``` r
+
+library(googleLanguageR)
+
+# random text form wikipedia
+texts <- c("Norma is a small constellation in the Southern Celestial Hemisphere between Ara and Lupus, one of twelve drawn up in the 18th century by French astronomer Nicolas Louis de Lacaille and one of several depicting scientific instruments. Its name refers to a right angle in Latin, and is variously considered to represent a rule, a carpenter's square, a set square or a level. It remains one of the 88 modern constellations. Four of Norma's brighter stars make up a square in the field of faint stars. Gamma2 Normae is the brightest star with an apparent magnitude of 4.0. Mu Normae is one of the most luminous stars known, but is partially obscured by distance and cosmic dust. Four star systems are known to harbour planets. ", 
+         "Solomon Wariso (born 11 November 1966 in Portsmouth) is a retired English sprinter who competed primarily in the 200 and 400 metres.[1] He represented his country at two outdoor and three indoor World Championships and is the British record holder in the indoor 4 × 400 metres relay.")
+nlp_result <- gl_nlp(texts)
+```
+
+Each text has its own entry in returned tibbles
+
+``` r
+str(nlp_result, max.level = 2)
+List of 7
+ $ sentences        :List of 2
+  ..$ :'data.frame':    7 obs. of  4 variables:
+  ..$ :'data.frame':    1 obs. of  4 variables:
+ $ tokens           :List of 2
+  ..$ :'data.frame':    139 obs. of  17 variables:
+  ..$ :'data.frame':    54 obs. of  17 variables:
+ $ entities         :List of 2
+  ..$ :Classes ‘tbl_df’, ‘tbl’ and 'data.frame':    52 obs. of  9 variables:
+  ..$ :Classes ‘tbl_df’, ‘tbl’ and 'data.frame':    8 obs. of  9 variables:
+ $ language         : chr [1:2] "en" "en"
+ $ text             : chr [1:2] "Norma is a small constellation in the Southern Celestial Hemisphere between Ara and Lupus, one of twelve drawn "| __truncated__ "Solomon Wariso (born 11 November 1966 in Portsmouth) is a retired English sprinter who competed primarily in th"| __truncated__
+ $ documentSentiment:Classes ‘tbl_df’, ‘tbl’ and 'data.frame':  2 obs. of  2 variables:
+  ..$ magnitude: num [1:2] 2.4 0.1
+  ..$ score    : num [1:2] 0.3 0.1
+ $ classifyText     :Classes ‘tbl_df’, ‘tbl’ and 'data.frame':  1 obs. of  2 variables:
+  ..$ name      : chr "/Science/Astronomy"
+  ..$ confidence: num 0.93
+```
+
+Sentence structure and sentiment:
+
+``` r
+## sentences structure
+nlp_result$sentences[[2]]
+
+content
+1 Solomon Wariso (born 11 November 1966 in Portsmouth) is a retired English sprinter who competed primarily in the 200 and 400 metres.[1] He represented his country at two outdoor and three indoor World Championships and is the British record holder in the indoor 4 × 400 metres relay.
+  beginOffset magnitude score
+1           0       0.1   0.1
+```
+
+Information on what words (tokens) are within each text:
+
+``` r
+# word tokens data
+str(nlp_result$tokens[[1]])
+'data.frame':   139 obs. of  17 variables:
+ $ content       : chr  "Norma" "is" "a" "small" ...
+ $ beginOffset   : int  0 6 9 11 17 31 34 38 47 57 ...
+ $ tag           : chr  "NOUN" "VERB" "DET" "ADJ" ...
+ $ aspect        : chr  "ASPECT_UNKNOWN" "ASPECT_UNKNOWN" "ASPECT_UNKNOWN" "ASPECT_UNKNOWN" ...
+ $ case          : chr  "CASE_UNKNOWN" "CASE_UNKNOWN" "CASE_UNKNOWN" "CASE_UNKNOWN" ...
+ $ form          : chr  "FORM_UNKNOWN" "FORM_UNKNOWN" "FORM_UNKNOWN" "FORM_UNKNOWN" ...
+ $ gender        : chr  "GENDER_UNKNOWN" "GENDER_UNKNOWN" "GENDER_UNKNOWN" "GENDER_UNKNOWN" ...
+ $ mood          : chr  "MOOD_UNKNOWN" "INDICATIVE" "MOOD_UNKNOWN" "MOOD_UNKNOWN" ...
+ $ number        : chr  "SINGULAR" "SINGULAR" "NUMBER_UNKNOWN" "NUMBER_UNKNOWN" ...
+ $ person        : chr  "PERSON_UNKNOWN" "THIRD" "PERSON_UNKNOWN" "PERSON_UNKNOWN" ...
+ $ proper        : chr  "PROPER" "PROPER_UNKNOWN" "PROPER_UNKNOWN" "PROPER_UNKNOWN" ...
+ $ reciprocity   : chr  "RECIPROCITY_UNKNOWN" "RECIPROCITY_UNKNOWN" "RECIPROCITY_UNKNOWN" "RECIPROCITY_UNKNOWN" ...
+ $ tense         : chr  "TENSE_UNKNOWN" "PRESENT" "TENSE_UNKNOWN" "TENSE_UNKNOWN" ...
+ $ voice         : chr  "VOICE_UNKNOWN" "VOICE_UNKNOWN" "VOICE_UNKNOWN" "VOICE_UNKNOWN" ...
+ $ headTokenIndex: int  1 1 4 4 1 4 9 9 9 5 ...
+ $ label         : chr  "NSUBJ" "ROOT" "DET" "AMOD" ...
+ $ value         : chr  "Norma" "be" "a" "small" ...
+```
+
+What entities within text have been identified, with optional wikipedia
+URL if its available.
+
+``` r
+nlp_result$entities
+[[1]]
+# A tibble: 52 x 9
+   name           type         salience mid   wikipedia_url magnitude score beginOffset mention_type
+   <chr>          <chr>           <dbl> <chr> <chr>             <dbl> <dbl>       <int> <chr>       
+ 1 angle          OTHER         0.0133  NA    NA                  0     0           261 COMMON      
+ 2 Ara            ORGANIZATION  0.0631  NA    NA                  0     0            76 PROPER      
+ 3 astronomer     NA           NA       NA    NA                 NA    NA           144 COMMON      
+ 4 carpenter      PERSON        0.0135  NA    NA                  0     0           328 COMMON      
+ 5 constellation  OTHER         0.150   NA    NA                  0     0            17 COMMON      
+ 6 constellations OTHER         0.0140  NA    NA                  0.9   0.9         405 COMMON      
+ 7 distance       OTHER         0.00645 NA    NA                  0     0           649 COMMON      
+ 8 dust           OTHER         0.00645 NA    NA                  0.3  -0.3         669 COMMON      
+ 9 field          LOCATION      0.00407 NA    NA                  0.6  -0.6         476 COMMON      
+10 French         LOCATION      0.0242  NA    NA                  0     0           137 PROPER      
+# ... with 42 more rows
+
+[[2]]
+# A tibble: 8 x 9
+  name                type         salience mid         wikipedia_url    magnitude score beginOffset mention_type
+  <chr>               <chr>           <dbl> <chr>       <chr>                <dbl> <dbl>       <int> <chr>       
+1 British             LOCATION       0.0255 NA          NA                     0     0           226 PROPER      
+2 country             LOCATION       0.0475 NA          NA                     0     0           155 COMMON      
+3 English             OTHER          0.0530 NA          NA                     0     0            66 PROPER      
+4 Portsmouth          LOCATION       0.0530 /m/0619_    https://en.wiki…       0     0            41 PROPER      
+5 record holder       PERSON         0.0541 NA          NA                     0     0           234 COMMON      
+6 Solomon Wariso      ORGANIZATION   0.156  /g/120x5nf6 https://en.wiki…       0     0             0 PROPER      
+7 sprinter            PERSON         0.600  NA          NA                     0     0            74 COMMON      
+8 World Championships EVENT          0.0113 NA          NA                     0.1   0.1         195 PROPER      
+```
+
+Sentiment of the entire text:
+
+``` r
+nlp_result$documentSentiment
+# A tibble: 2 x 2
+  magnitude score
+      <dbl> <dbl>
+1       2.4   0.3
+2       0.1   0.1
+```
+
+The category for the text as defined by the list
+[here](https://cloud.google.com/natural-language/docs/categories).
+
+``` r
+nlp_result$classifyText
+# A tibble: 1 x 2
+  name               confidence
+  <chr>                   <dbl>
+1 /Science/Astronomy       0.93
+```
+
+The language for the text:
+
+``` r
+
+nlp_result$language
+# [1] "en" "en"
+```
+
+The original passed in text, to aid with working with the output:
+
+``` r
+nlp_result$text
+[1] "Norma is a small constellation in the Southern Celestial Hemisphere between Ara and Lupus, one of twelve drawn up in the 18th century by French astronomer Nicolas Louis de Lacaille and one of several depicting scientific instruments. Its name refers to a right angle in Latin, and is variously considered to represent a rule, a carpenter's square, a set square or a level. It remains one of the 88 modern constellations. Four of Norma's brighter stars make up a square in the field of faint stars. Gamma2 Normae is the brightest star with an apparent magnitude of 4.0. Mu Normae is one of the most luminous stars known, but is partially obscured by distance and cosmic dust. Four star systems are known to harbour planets."
+[2] "Solomon Wariso (born 11 November 1966 in Portsmouth) is a retired English sprinter who competed primarily in the 200 and 400 metres.[1] He represented his country at two outdoor and three indoor World Championships and is the British record holder in the indoor 4 × 400 metres relay."
+```
